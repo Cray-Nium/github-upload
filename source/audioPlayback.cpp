@@ -11,6 +11,8 @@
 #include <out123.h>
 #include "globals.h"
 #include "Album.h"
+#include "AudioLibrary.h"
+#include "Playlist.h"
 #include "audioPlayback.h"
 
 //For file searching
@@ -18,6 +20,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <vector>
+#include <map>
 #include <cstring>
 #include <string>
 #include <algorithm> //To get sort()
@@ -31,7 +34,9 @@ using namespace std;
 queue<uint8_t> audioPlaybackMessages;
 bool audioThreadDone = false;
 
-vector<Album> coreLibrary;
+AudioLibrary coreLibrary;
+vector<Album> albumLibrary;
+Playlist primaryPlaylist;
 
 mpg123_handle *currentTrack = NULL;
 int mp3DecoderStatus = MPG123_OK;
@@ -52,14 +57,12 @@ out123_handle *audioOutput = NULL;
 char* audioOutputDriver = NULL; //NULL: default
 char* audioOutputDevice = NULL; //NULL: default
 
-off_t samplesPlayed;
+off_t framesPlayed;
 static bool paused = false;
 
 //Temporary data structures
-int songNumber = 4;
+int songNumber = 0;
 string dir = string("/home/pi/Music/mPi3_library/");
-vector<string> files = vector<string>();
-string audioFilePath;
 
 
 
@@ -77,13 +80,23 @@ void decreaseVolume();
 bool populateAlbumLibrary(string rootDirPath, vector<Album> &library);
 
 //Temporary fns
-void compileFiles(vector<string> &files);
+void compilePrimaryPlaylist();
 
 
 void* audioThreadRun(void* param)
 {
-    populateAlbumLibrary(dir, coreLibrary);
-    compileFiles(files);
+    clock_t t1, elapsed;
+
+    t1 = clock();
+    populateAlbumLibrary(dir, albumLibrary);
+    compilePrimaryPlaylist();
+    elapsed = clock() - t1;
+    cout << "Time to compile library and primary playlist: " << elapsed / (CLOCKS_PER_SEC / 1000) << " ms" << endl;
+    
+    cout << "Size of coreLibrary track list: " << coreLibrary.tracks.size() << endl;
+    cout << "First entry of coreLibrary: " << coreLibrary.tracks.at(0).filepath << endl;
+    cout << "Size of primaryPlaylist entries: " << primaryPlaylist.entries.size() << endl;
+    cout << "First entry of primaryPlaylist: " << coreLibrary.tracks.at(primaryPlaylist.entries.at(0).audioTrackKey).filepath << endl;
     
     if (!loadMp3File(songNumber)){
         audioThreadDone = true;
@@ -102,8 +115,8 @@ void* audioThreadRun(void* param)
         
         if (mp3DecoderStatus != MPG123_OK){
             if (mp3DecoderStatus != MPG123_DONE && mp3DecoderStatus != MPG123_NEW_FORMAT ){
-                fprintf( stderr, "Warning: Error at end of decoding because: %s\n",
-                mp3DecoderStatus == MPG123_ERR ? mpg123_strerror(currentTrack) : mpg123_plain_strerror(mp3DecoderStatus) );
+                fprintf( stderr, "Warning: Error with decoding because: %s\n",
+                         mp3DecoderStatus == MPG123_ERR ? mpg123_strerror(currentTrack) : mpg123_plain_strerror(mp3DecoderStatus) );
             }
             if (!stabilizeStream()) break;
         }
@@ -188,14 +201,14 @@ bool playChunk(){
     {
         fprintf(stderr, "Warning: written less than gotten from libmpg123: %li != %li\n", (long)bytesPlayed, (long)bytesRead);
     }
-    samplesPlayed += bytesPlayed/audioFramesize;
+    framesPlayed += bytesPlayed/audioFramesize;
     
     return true;
 }
 
 bool stabilizeStream(){
     if (mp3DecoderStatus == MPG123_DONE){
-        printf("%li samples written (%d bytes).\n", (long)samplesPlayed, (samplesPlayed * audioFramesize));
+        printf("%li frames written (%d bytes).\n", (long)framesPlayed, (framesPlayed * audioFramesize));
         return loadNextTrack();
     }
     else return false;
@@ -203,7 +216,7 @@ bool stabilizeStream(){
 
 bool loadMp3File(int index){
 
-    audioFilePath = files[index];
+    string audioFilePath = coreLibrary.tracks.at(primaryPlaylist.entries.at(index).audioTrackKey).filepath;
 
     cout << endl << "Track index: " << songNumber << endl;
     cout << "File path: " << audioFilePath << endl;
@@ -217,7 +230,7 @@ bool loadMp3File(int index){
             cout << "Scan failed." << endl;
         }
         printf("Opened file %s. Sample rate: %i, Channels: %d, Encoding: %x, Expected Length: %f\n",
-               files[index].c_str(), currentTrackSampleRate, currentTrackChannelCount, currentTrackEncodingType, getTrackLength());
+               audioFilePath.c_str(), currentTrackSampleRate, currentTrackChannelCount, currentTrackEncodingType, getTrackLength());
     }
     else
     {
@@ -238,13 +251,13 @@ bool loadMp3File(int index){
     currentTrackBuffer = (unsigned char*)malloc(audioBufferSize);
     cout << "Buffer size: " << (audioBufferSize / audioFramesize) << " frames." << endl;
 
-    samplesPlayed = 0;
+    framesPlayed = 0;
     
     return true;
 }
 
 bool loadPreviousTrack(){
-    if ( (songNumber - 1) >= 0 && (songNumber - 1) < files.size() ){
+    if ( (songNumber - 1) >= 0 && (songNumber - 1) < primaryPlaylist.entries.size() ){
         songNumber--;
         mpg123_close(currentTrack);
         free(currentTrackBuffer);
@@ -254,7 +267,7 @@ bool loadPreviousTrack(){
 }
 
 bool loadNextTrack(){
-    if ( (songNumber + 1) >= 0 && (songNumber + 1) < files.size() ){
+    if ( (songNumber + 1) >= 0 && (songNumber + 1) < primaryPlaylist.entries.size() ){
         songNumber++;
         mpg123_close(currentTrack);
         free(currentTrackBuffer);
@@ -314,25 +327,18 @@ bool populateAlbumLibrary(string rootDirPath, vector<Album> &library)
 }
 
 //Temporary fns
-void compileFiles(vector<string> &files)
+void compilePrimaryPlaylist()
 {
-    for (int i=0; i<coreLibrary.size(); i++)
+    for (int i=0; i<albumLibrary.size(); i++)
     {
-        cout << "Adding album '" << coreLibrary[i].getTitle() << "' to playlist" << endl;
-        for (int j=0; j<coreLibrary[i].discs.size(); j++)
+        cout << "Adding album '" << albumLibrary[i].getTitle() << "' to playlist" << endl;
+        for (int j=0; j<albumLibrary[i].discs.size(); j++)
         {
-            for (int k=0; k<coreLibrary[i].discs[j].tracks.size(); k++)
+            for (int k=0; k<albumLibrary[i].discs[j].tracks.size(); k++)
             {
-                files.push_back(coreLibrary[i].discs[j].tracks[k].filepath);
+                primaryPlaylist.entries.push_back(PlaylistEntry(albumLibrary[i].discs[j].trackKeys[k]));
             }
         }
     }
-    //unsigned seed = chrono::system_clock::now().time_since_epoch().count();
-    random_device engine;
-    shuffle (files.begin(), files.end(), engine);
-    //random_shuffle(files.begin(), files.end());
+    primaryPlaylist.shuffle(PLAYLIST_SHUFFLE_ALL);
 }
-
-/*
- * See https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html for help with file searching
-*/

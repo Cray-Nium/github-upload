@@ -2,15 +2,14 @@
 #define AUDIOTRACK_H
 
 #include <string>
-#include "PlaylistEntry.h"
 
 using namespace std;
 
-class AudioTrack : public PlaylistEntry
+class AudioTrack
 {
 private:
 public:
-    AudioTrack(string filepath = NULL, bool advancesAutomatically = true);
+    AudioTrack(string filepath = NULL);
     string filepath;
 };
 

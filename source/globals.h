@@ -15,16 +15,17 @@
 #define GLOBALS_H
 
 #include <queue>
+#include <map>
 #include <ctime>
+#include "AudioLibrary.h"
 
 using namespace std;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef unsigned char       uint8_t;
+typedef unsigned short      uint16_t;
+typedef unsigned int        uint32_t;
+typedef unsigned long long  uint64_t;
 
-typedef unsigned char uint8_t;
-    
 extern bool mPi3ShuttingDown;
 extern bool audioThreadDone;
 
@@ -36,6 +37,8 @@ extern queue<uint8_t> audioPlaybackMessages;
 #define COMMAND_VOLUME_DOWN       0x42
 #define COMMAND_TOGGLE_PAUSE      0x43
 
+extern AudioLibrary coreLibrary;
+
 extern clock_t timeMarks[];
 
 /*
@@ -45,11 +48,6 @@ extern clock_t timeMarks[];
     elapsed = clock() - t1;
     cout << "Time to load file: " << elapsed / (CLOCKS_PER_SEC / 1000) << " ms" << endl;
 */
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GLOBALS_H */
 

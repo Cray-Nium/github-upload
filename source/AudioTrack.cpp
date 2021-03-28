@@ -5,11 +5,9 @@
  */
 
 #include "AudioTrack.h"
-#include "PlaylistEntry.h"
 
 
-AudioTrack::AudioTrack(string filepath, bool advancesAutomatically)
+AudioTrack::AudioTrack(string filepath)
 {
     this->filepath = filepath;
-    this->advancesAutomatically = advancesAutomatically;
 }

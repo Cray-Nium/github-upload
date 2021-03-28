@@ -3,6 +3,8 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include "AudioLibrary.h"
+#include "globals.h"
 #include "Album.h"
 
 //For debug purposes; remove when done
@@ -110,6 +112,7 @@ bool Album::populateTracks()
     vector<string> fileNames;
     albumDisc newDisc;
     albumDisc* currentDisc;
+    audioLibraryReturnPair audioLibraryInfo;
     
     if (this->discs.empty())
     {
@@ -130,6 +133,11 @@ bool Album::populateTracks()
                 newDisc.tracks.push_back(AudioTrack(currentFolderPath + fileNames[i]));
                 cout << "Added file '" << fileNames[i] << "'" << endl;
                 cout << "  with path " << newDisc.tracks[i].filepath << endl;
+                audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
+                if (audioLibraryInfo.second)
+                {
+                    newDisc.trackKeys.push_back(audioLibraryInfo.first);
+                }
             }
             this->discs.push_back(newDisc);
             retVal = true;
@@ -155,6 +163,11 @@ bool Album::populateTracks()
                 currentDisc->tracks.push_back(AudioTrack(currentFolderPath + fileNames[i]));
                 cout << "Added file '" << fileNames[i] << "'" << endl;
                 cout << "  with path " << currentDisc->tracks[i].filepath << endl;
+                audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
+                if (audioLibraryInfo.second)
+                {
+                    newDisc.trackKeys.push_back(audioLibraryInfo.first);
+                }
             }
         }
     }

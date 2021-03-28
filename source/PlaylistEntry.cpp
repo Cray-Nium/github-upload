@@ -7,7 +7,8 @@
 #include "PlaylistEntry.h"
 
 
-PlaylistEntry::PlaylistEntry(bool advancesAutomatically)
+PlaylistEntry::PlaylistEntry(const unsigned int& audioTrackKey, const bool& advancesAutomatically)
 {
+    this->audioTrackKey = audioTrackKey;
     this->advancesAutomatically = advancesAutomatically;
 }

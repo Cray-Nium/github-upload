@@ -5,7 +5,9 @@ class PlaylistEntry
 {
 private:
 public:
-    PlaylistEntry(bool advancesAutomatically = true);
+    PlaylistEntry(const unsigned int& audioTrackKey, const bool& advancesAutomatically = true);
+
+    unsigned int audioTrackKey;
     bool advancesAutomatically;
 };
 
