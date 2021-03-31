@@ -262,13 +262,16 @@ bool loadPreviousTrack(){
 }
 
 bool loadNextTrack(){
-    if ( (songNumber + 1) >= 0 && (songNumber + 1) < primaryPlaylist.entries.size() ){
+    if ( (songNumber + 1) < primaryPlaylist.entries.size() ){
         songNumber++;
-        mpg123_close(currentTrack);
-        free(currentTrackBuffer);
-        return loadMp3File(songNumber);
     }
-    else return false;
+    else
+    {
+        songNumber = 0;
+    }
+    mpg123_close(currentTrack);
+    free(currentTrackBuffer);
+    return loadMp3File(songNumber);
 }
 
 void setTrackTime(double seconds){
@@ -329,8 +332,10 @@ void compilePrimaryPlaylist()
         cout << "Adding album '" << albumLibrary[i].getTitle() << "' to playlist" << endl;
         for (int j=0; j<albumLibrary[i].discs.size(); j++)
         {
-            for (int k=0; k<albumLibrary[i].discs[j].tracks.size(); k++)
+            cout << "Adding '" << albumLibrary[i].discs[j].discName << "' to playlist" << endl;
+            for (int k=0; k<albumLibrary[i].discs[j].trackKeys.size(); k++)
             {
+                cout << "Adding track key '" << albumLibrary[i].discs[j].trackKeys[k] << "' to playlist" << endl;
                 primaryPlaylist.entries.push_back(PlaylistEntry(albumLibrary[i].discs[j].trackKeys[k]));
             }
         }

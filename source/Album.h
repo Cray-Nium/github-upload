@@ -8,7 +8,6 @@ using namespace std;
 
 struct albumDisc {
     string discName;
-    vector<AudioTrack> tracks;
     vector<unsigned int> trackKeys;
 };
 

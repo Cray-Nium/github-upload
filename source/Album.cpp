@@ -131,10 +131,9 @@ bool Album::populateTracks()
             cout << "Populating Disc 1" << endl;
             for (int i=0; i<fileNames.size(); i++)
             {
-                newDisc.tracks.push_back(AudioTrack(currentFolderPath + fileNames[i]));
-                cout << "Added file '" << fileNames[i] << "'" << endl;
-                cout << "  with path " << newDisc.tracks[i].filepath << endl;
                 audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
+                cout << "Added file '" << fileNames[i] << "'" << endl;
+                cout << "  with path " << currentFolderPath + fileNames[i] << endl;
                 if (audioLibraryInfo.second)
                 {
                     newDisc.trackKeys.push_back(audioLibraryInfo.first);
@@ -168,13 +167,19 @@ bool Album::populateTracks()
             cout << "Populating " << currentDisc->discName << endl;
             for (int i=0; i<fileNames.size(); i++)
             {
-                currentDisc->tracks.push_back(AudioTrack(currentFolderPath + fileNames[i]));
-                cout << "Added file '" << fileNames[i] << "'" << endl;
-                cout << "  with path " << currentDisc->tracks[i].filepath << endl;
                 audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
+                cout << "Added file '" << fileNames[i] << "'" << endl;
+                cout << "  with path " << currentFolderPath + fileNames[i] << endl;
                 if (audioLibraryInfo.second)
                 {
-                    newDisc.trackKeys.push_back(audioLibraryInfo.first);
+                    currentDisc->trackKeys.push_back(audioLibraryInfo.first);
+                    coreLibrary.tracks[audioLibraryInfo.first].artFilePath = this->coverArtFilePath;
+                    coreLibrary.tracks[audioLibraryInfo.first].artist = this->artist;
+                    coreLibrary.tracks[audioLibraryInfo.first].title = fileNames[i];
+                }
+                else
+                {
+                    cout << "coreLibrary.addTrack returned false" << endl;
                 }
             }
         }
