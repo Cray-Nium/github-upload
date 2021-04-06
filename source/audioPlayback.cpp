@@ -136,9 +136,7 @@ bool audioPlaybackInit(){
     cout << "Time to compile library and primary playlist: " << elapsed / (CLOCKS_PER_SEC / 1000) << " ms" << endl;
     
     cout << "Size of coreLibrary track list: " << coreLibrary.tracks.size() << endl;
-    cout << "First entry of coreLibrary: " << coreLibrary.tracks.at(0).filepath << endl;
     cout << "Size of primaryPlaylist entries: " << primaryPlaylist.entries.size() << endl;
-    cout << "First entry of primaryPlaylist: " << coreLibrary.tracks.at(primaryPlaylist.entries.at(0).audioTrackKey).filepath << endl;
     
     return true;
 }
@@ -267,6 +265,7 @@ bool loadNextTrack(){
     }
     else
     {
+        primaryPlaylist.shuffle(PLAYLIST_SHUFFLE_ALL);
         songNumber = 0;
     }
     mpg123_close(currentTrack);
@@ -307,7 +306,6 @@ bool populateAlbumLibrary(string rootDirPath, vector<Album> &library)
             && ((string)currentFile->d_name != "..") )
         {
             albumFileNames.push_back((string)currentFile->d_name);
-            cout << "Found album folder: " << string(currentFile->d_name) << "." << endl;
         }   
     }
     if (!albumFileNames.empty())
@@ -332,10 +330,8 @@ void compilePrimaryPlaylist()
         cout << "Adding album '" << albumLibrary[i].getTitle() << "' to playlist" << endl;
         for (int j=0; j<albumLibrary[i].discs.size(); j++)
         {
-            cout << "Adding '" << albumLibrary[i].discs[j].discName << "' to playlist" << endl;
             for (int k=0; k<albumLibrary[i].discs[j].trackKeys.size(); k++)
             {
-                cout << "Adding track key '" << albumLibrary[i].discs[j].trackKeys[k] << "' to playlist" << endl;
                 primaryPlaylist.entries.push_back(PlaylistEntry(albumLibrary[i].discs[j].trackKeys[k]));
             }
         }

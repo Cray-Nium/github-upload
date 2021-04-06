@@ -86,20 +86,16 @@ bool Album::populateDiscs()
             && ((string)currentFile->d_name != "..") )
         {
             discNames.push_back((string)currentFile->d_name);
-            cout << "Added disc with name: " << (string)currentFile->d_name << endl;
         }   
     }
     if (!discNames.empty())
     {
         sort(discNames.begin(), discNames.end());
-        cout << "Final disc order: ";
         for (int i=0; i<discNames.size(); i++)
         {
             currentDisc.discName = discNames.at(i);
             this->discs.push_back(currentDisc);
-            cout << currentDisc.discName << ", ";
         }
-        cout << endl;
     }
     return true;
 }
@@ -132,8 +128,6 @@ bool Album::populateTracks()
             for (int i=0; i<fileNames.size(); i++)
             {
                 audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
-                cout << "Added file '" << fileNames[i] << "'" << endl;
-                cout << "  with path " << currentFolderPath + fileNames[i] << endl;
                 if (audioLibraryInfo.second)
                 {
                     newDisc.trackKeys.push_back(audioLibraryInfo.first);
@@ -143,7 +137,7 @@ bool Album::populateTracks()
                 }
                 else
                 {
-                    cout << "coreLibrary.addTrack returned false" << endl;
+                    cout << "Failed to add " << fileNames[i] << " to coreLibrary (coreLibrary.addTrack returned false)" << endl;
                 }
             }
             this->discs.push_back(newDisc);
@@ -168,8 +162,6 @@ bool Album::populateTracks()
             for (int i=0; i<fileNames.size(); i++)
             {
                 audioLibraryInfo = coreLibrary.addTrack(currentFolderPath + fileNames[i]);
-                cout << "Added file '" << fileNames[i] << "'" << endl;
-                cout << "  with path " << currentFolderPath + fileNames[i] << endl;
                 if (audioLibraryInfo.second)
                 {
                     currentDisc->trackKeys.push_back(audioLibraryInfo.first);
@@ -179,7 +171,7 @@ bool Album::populateTracks()
                 }
                 else
                 {
-                    cout << "coreLibrary.addTrack returned false" << endl;
+                    cout << "Failed to add " << fileNames[i] << " to coreLibrary (coreLibrary.addTrack returned false)" << endl;
                 }
             }
         }

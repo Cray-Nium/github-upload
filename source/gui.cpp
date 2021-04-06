@@ -9,6 +9,7 @@
 #include <string>
 #include "AudioLibrary.h"
 #include "AudioTrack.h"
+#include "audioPlayback.h"
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Texture.hpp>
@@ -32,6 +33,7 @@ Vector2u windowOrigin = Vector2u(0,0);
 #include "Album.h"
 extern vector<Album> albumLibrary;
 string albumArtFilePath;
+string trackFilePath;
 Texture albumArtTexture;
 Vector2u albumArtNativeSize;
 Sprite albumArtSprite;
@@ -81,14 +83,23 @@ void* guiThreadRun(void* param){
                     window.close();
                     break;
                 case sf::Event::TouchBegan:
-                    cout << "Touch began with finger: " << event.touch.finger << " and coordinates: " << event.touch.x << ", " << event.touch.y << endl;
                     break;
                 case sf::Event::TouchMoved:
-                    cout << "Touch moved with finger: " << event.touch.finger << " and coordinates: " << event.touch.x << ", " << event.touch.y << endl;
                     break;
                 case sf::Event::TouchEnded:
-                    audioPlaybackMessages.push(COMMAND_NEXT_TRACK);
-                    cout << "Touch ended with finger: " << event.touch.finger << " and coordinates: " << event.touch.x << ", " << event.touch.y << endl;
+                    if (event.touch.x < (windowSize.x / 2) )
+                    {
+                        if (getTrackTime() > 2.0){
+                            audioPlaybackMessages.push(COMMAND_RESTART_TRACK);
+                        }
+                        else{
+                            audioPlaybackMessages.push(COMMAND_PREVIOUS_TRACK);
+                        }
+                    }
+                    else
+                    {
+                        audioPlaybackMessages.push(COMMAND_NEXT_TRACK);
+                    }
                     break;
             }
         }
@@ -99,20 +110,27 @@ void* guiThreadRun(void* param){
 
         if(localSongNumber != songNumber)
         {
-            cout << "Refreshing album art texture" << endl;
-            albumArtFilePath = coreLibrary.tracks.at(primaryPlaylist.entries.at(songNumber).audioTrackKey).artFilePath;
-            t1 = clock();
-            albumArtTexture.loadFromFile(albumArtFilePath);
-            t2 = clock();
-            albumArtNativeSize = albumArtTexture.getSize();
-            albumArtTextureScaleFactor = ( albumArtNativeSize.x >= albumArtNativeSize.y 
-                                          ? albumArtFrameSideLength / albumArtNativeSize.x
-                                          : albumArtFrameSideLength / albumArtNativeSize.y);
-            albumArtSprite.setTexture(albumArtTexture, true);
-            albumArtSprite.setScale(albumArtTextureScaleFactor, albumArtTextureScaleFactor);
-            cout << "Time to load texture: " << (t2 - t1) / (CLOCKS_PER_SEC / 1000) << " ms" << endl;
-            
             localSongNumber = songNumber;
+            cout << "GUI Refreshing album art texture for songNumber " << localSongNumber << endl;
+            albumArtFilePath = coreLibrary.tracks.at(primaryPlaylist.entries.at(localSongNumber).audioTrackKey).artFilePath;
+            trackFilePath = coreLibrary.tracks.at(primaryPlaylist.entries.at(localSongNumber).audioTrackKey).filepath;
+            cout << "GUI got art filepath: " << albumArtFilePath << " for track: " << trackFilePath << endl;
+            t1 = clock();
+            if (!albumArtTexture.loadFromFile(albumArtFilePath))
+            {
+                cout << "GUI Failed to load file" << endl;
+            }
+            else
+            {
+                t2 = clock();
+                albumArtNativeSize = albumArtTexture.getSize();
+                albumArtTextureScaleFactor = ( albumArtNativeSize.x >= albumArtNativeSize.y 
+                                              ? albumArtFrameSideLength / albumArtNativeSize.x
+                                              : albumArtFrameSideLength / albumArtNativeSize.y);
+                albumArtSprite.setTexture(albumArtTexture, true);
+                albumArtSprite.setScale(albumArtTextureScaleFactor, albumArtTextureScaleFactor);
+                cout << "Time to load texture: " << (t2 - t1) / (CLOCKS_PER_SEC / 1000) << " ms" << endl;
+            }
         }
         
         window.clear(Color::Black);
@@ -122,7 +140,6 @@ void* guiThreadRun(void* param){
 }
 
 bool guiInit(){
-    
     return true;
 }
 

@@ -18,6 +18,7 @@
 #include <queue>
 #include <map>
 #include <ctime>
+#include "AudioTrack.h"
 #include "AudioLibrary.h"
 #include "Playlist.h"
 
@@ -30,6 +31,7 @@ typedef unsigned long long  uint64_t;
 
 extern string libraryDirectory;
 extern unsigned int songNumber;
+extern AudioLibrary coreLibrary;
 extern Playlist primaryPlaylist;
 
 extern bool mPi3ShuttingDown;
@@ -43,7 +45,7 @@ extern queue<uint8_t> audioPlaybackMessages;
 #define COMMAND_VOLUME_DOWN       0x42
 #define COMMAND_TOGGLE_PAUSE      0x43
 
-extern AudioLibrary coreLibrary;
+
 
 extern clock_t timeMarks[];
 
